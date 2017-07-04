@@ -25,6 +25,10 @@ public class WebServer {
 
     }
 
+    /**
+     * initializes the server and waits connection and initiates a ClientHandler Thread
+     * @throws IOException
+     */
 
     public void init() throws IOException {
 
@@ -36,17 +40,25 @@ public class WebServer {
             System.out.println("* Waiting for connection...*");
             clientSocket = serverSocket.accept();
 
-
             Thread clientHandler = new Thread(new ClientHandler(clientSocket));
             clientHandler.start();
         }
     }
 
+    /**
+     * inner class ClientHandler
+     * Handles client request and responds
+     */
 
     public class ClientHandler implements Runnable {
 
         private Socket clientSocket;
 
+        /**
+         * ClientHandler constructor
+         *
+         * @param clientSocket
+         */
         public ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
         }
@@ -65,11 +77,9 @@ public class WebServer {
 
                 BufferedReader fromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
+
+
                 start(toClient, fromClient);
-
-
-                //TODO: catch exceptions
-
 
                 clientSocket.close();
 
@@ -84,6 +94,15 @@ public class WebServer {
     }
 
 
+    /**
+     * receives request gets filepath see getFilePath
+     * creates File
+     * generates Header see generateHeader
+     *
+     * @param toClient an DataOutputStream
+     * @param fromClient an BufferedReader
+     * @throws IOException
+     */
     private void start(DataOutputStream toClient, BufferedReader fromClient) throws IOException {
 
         //find file path and create a File with it
@@ -112,6 +131,13 @@ public class WebServer {
 
     }
 
+    /**
+     * reads 1st line with BufferedReader fromClient
+     *
+     * @param fromClient an BufferedReader
+     * @return String file Extension
+     * @throws IOException
+     */
 
     private String getFilePath(BufferedReader fromClient) throws IOException {
 
@@ -126,6 +152,14 @@ public class WebServer {
     }
 
 
+    /**
+     * Reads all file bytes
+     *
+     * @param file
+     * @return a byte[]
+     * @throws IOException
+     */
+
     private byte[] readFile(File file) throws IOException {
 
         return Files.readAllBytes(file.toPath());
@@ -134,6 +168,12 @@ public class WebServer {
     }
 
 
+    /**
+     * generates Header according to client request
+     *
+     * @param file
+     * @return String response Header
+     */
     public String generateHeader(File file) {
 
         // Specific Headers
@@ -151,19 +191,28 @@ public class WebServer {
     }
 
 
+    /**
+     * get file extension mime type
+     *
+     * @param file
+     * @return String file extension
+     */
     private String getFileExtension(File file) {
 
         String fileExtension;
 
+        //if there is no extension
         if ((file.getName().indexOf(".")) == -1) {
 
             return "text/html; charset=UTF-8";
+
         } else {
 
             fileExtension = file.getName().substring(file.getName().indexOf("."));
         }
 
 
+        // Specific file types
         if (fileExtension.equals(".jpg")) {
             return "image/png";
         }
@@ -177,10 +226,16 @@ public class WebServer {
             return "image/png";
         }
 
+
         return fileExtension;
     }
 
-
+    /**
+     * handles codes
+     *
+     * @param file
+     * @return int code
+     */
     private int getCode(File file) {
 
         return !file.exists() ? 404 : 200;
