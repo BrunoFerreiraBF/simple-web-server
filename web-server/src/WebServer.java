@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by Bruno Ferreira on 29/06/2017.
@@ -29,68 +31,21 @@ public class WebServer {
      * initializes the server and waits connection and initiates a ClientHandler Thread
      * @throws IOException
      */
-
     public void init() throws IOException {
 
         Socket clientSocket;
         ServerSocket serverSocket = new ServerSocket(1991);
+        ExecutorService cachedPool = Executors.newCachedThreadPool();
 
         while (true) {
 
             System.out.println("* Waiting for connection...*");
             clientSocket = serverSocket.accept();
 
-            Thread clientHandler = new Thread(new ClientHandler(clientSocket));
-            clientHandler.start();
-        }
-    }
-
-    /**
-     * inner class ClientHandler
-     * Handles client request and responds
-     */
-
-    public class ClientHandler implements Runnable {
-
-        private Socket clientSocket;
-
-        /**
-         * ClientHandler constructor
-         *
-         * @param clientSocket
-         */
-        public ClientHandler(Socket clientSocket) {
-            this.clientSocket = clientSocket;
-        }
-
-        @Override
-        public void run() {
-
-            System.out.println("\n***********************************\n" +
-                    "* Client :  " + clientSocket.getRemoteSocketAddress().toString() +
-                    " *\n***********************************\n");
-
-
-            try {
-
-                DataOutputStream toClient = new DataOutputStream(clientSocket.getOutputStream());
-
-                BufferedReader fromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-
-
-                start(toClient, fromClient);
-
-                clientSocket.close();
-
-            } catch (IOException e) {
-
-                System.err.println(e.getMessage());
-
-            }
+            // Allocate a Pool of an undefined number of threads
+            cachedPool.submit(new ClientHandler(clientSocket));
 
         }
-
     }
 
 
@@ -131,6 +86,7 @@ public class WebServer {
 
     }
 
+
     /**
      * reads 1st line with BufferedReader fromClient
      *
@@ -138,7 +94,6 @@ public class WebServer {
      * @return String file Extension
      * @throws IOException
      */
-
     private String getFilePath(BufferedReader fromClient) throws IOException {
 
         String head1 = fromClient.readLine();
@@ -159,7 +114,6 @@ public class WebServer {
      * @return a byte[]
      * @throws IOException
      */
-
     private byte[] readFile(File file) throws IOException {
 
         return Files.readAllBytes(file.toPath());
@@ -230,6 +184,7 @@ public class WebServer {
         return fileExtension;
     }
 
+
     /**
      * handles codes
      *
@@ -240,4 +195,55 @@ public class WebServer {
 
         return !file.exists() ? 404 : 200;
     }
+
+
+    /**
+     * inner class ClientHandler
+     * Handles client request and responds
+     */
+    public class ClientHandler implements Runnable {
+
+        private Socket clientSocket;
+
+        /**
+         * ClientHandler constructor
+         *
+         * @param clientSocket
+         */
+        public ClientHandler(Socket clientSocket) {
+            this.clientSocket = clientSocket;
+        }
+
+        @Override
+        public void run() {
+
+            System.out.println("\n***********************************\n" +
+                    "* Client :  " + clientSocket.getRemoteSocketAddress().toString() +
+                    " *\n***********************************\n");
+
+
+            try {
+
+                DataOutputStream toClient = new DataOutputStream(clientSocket.getOutputStream());
+
+                BufferedReader fromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+
+
+                start(toClient, fromClient);
+
+                clientSocket.close();
+
+            } catch (IOException e) {
+
+                System.err.println(e.getMessage());
+
+            }
+
+        }
+
+    }
+
+
+
 }
